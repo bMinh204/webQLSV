@@ -11,7 +11,6 @@ import {
   BookOpen, 
   LogOut,
   Settings,
-  ShieldCheck,
   TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -31,16 +30,14 @@ const Sidebar: React.FC = () => {
       { path: '/announcements', label: 'Thông báo', icon: Bell },
     ],
     [UserRole.TEACHER]: [
-      { path: '/', label: 'Bảng điều khiển', icon: LayoutDashboard },
-      { path: '/classes', label: 'Quản lý lớp dạy', icon: Users },
+      { path: '/', label: 'Quản lý lớp dạy', icon: Users },
       { path: '/grade-entry', label: 'Nhập điểm', icon: GraduationCap },
       { path: '/announcements', label: 'Thông báo', icon: Bell },
     ],
     [UserRole.ADMIN]: [
-      { path: '/', label: 'Quản trị', icon: LayoutDashboard },
-      { path: '/users', label: 'Quản lý người dùng', icon: Users },
+      { path: '/', label: 'Quản lý người dùng', icon: Users },
       { path: '/courses', label: 'Quản lý môn học', icon: BookOpen },
-      { path: '/permissions', label: 'Phân quyền', icon: ShieldCheck },
+      { path: '/announcements', label: 'Thông báo', icon: Bell },
       { path: '/settings', label: 'Cấu hình hệ thống', icon: Settings },
     ]
   };

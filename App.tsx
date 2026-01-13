@@ -17,7 +17,8 @@ import TeacherClasses from './pages/teacher/Classes';
 import ClassDetails from './pages/teacher/ClassDetails';
 import GradeEntry from './pages/teacher/GradeEntry';
 import UserManagement from './pages/admin/UserManagement';
-import CourseManagement from './pages/admin/CourseManagement'; // Import trang thực tế
+import CourseManagement from './pages/admin/CourseManagement';
+import Announcements from './pages/Announcements'; // Import Announcements mới
 
 const DashboardSwitch = () => {
   const { user } = useAuth();
@@ -40,6 +41,13 @@ const App: React.FC = () => {
             <Route path="/" element={
               <ProtectedRoute>
                 <DashboardSwitch />
+              </ProtectedRoute>
+            } />
+
+            {/* Common Routes */}
+            <Route path="/announcements" element={
+              <ProtectedRoute>
+                <Announcements />
               </ProtectedRoute>
             } />
 
