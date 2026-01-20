@@ -102,7 +102,7 @@ const GradeEntry: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-3">
-             <button onClick={() => setSuccessMessage(true)} className="px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl flex items-center gap-2 shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
+             <button onClick={() => { setSuccessMessage(true); setTimeout(() => setSuccessMessage(false), 3000); }} className="px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl flex items-center gap-2 shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
                 <Save className="w-4 h-4" /> Lưu bảng điểm
              </button>
           </div>
@@ -110,55 +110,68 @@ const GradeEntry: React.FC = () => {
 
         {successMessage && (
           <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl flex items-center gap-2 animate-in slide-in-from-top-2">
-            <CheckCircle2 className="w-5 h-5" /> <span className="font-bold">Đã lưu dữ liệu tạm thời vào hệ thống.</span>
+            <CheckCircle2 className="w-5 h-5" /> <span className="font-bold">Hệ thống đã cập nhật bảng điểm mới nhất.</span>
           </div>
         )}
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-separate border-spacing-y-2">
             <thead>
-              <tr className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest">
-                <th className="px-6 py-4 rounded-l-2xl">Sinh viên</th>
-                <th className="px-4 py-4 text-center">QT (10%)</th>
-                <th className="px-4 py-4 text-center">GK (40%)</th>
-                <th className="px-4 py-4 text-center">CK (50%)</th>
-                <th className="px-4 py-4 text-center">Hệ 10</th>
-                <th className="px-4 py-4 text-center">Hệ 4</th>
-                <th className="px-4 py-4 text-center">Điểm Chữ</th>
-                <th className="px-6 py-4 text-center rounded-r-2xl">Kết quả</th>
+              <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                <th className="px-6 py-2">Sinh viên</th>
+                <th className="px-4 py-2 text-center">QT</th>
+                <th className="px-4 py-2 text-center">GK</th>
+                <th className="px-4 py-2 text-center">CK</th>
+                <th className="px-4 py-2 text-center">Tổng</th>
+                <th className="px-4 py-2 text-center">Điểm Chữ</th>
+                <th className="px-6 py-2 text-center">Kết quả</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-transparent">
               {students.map(s => {
                 const grade = tempGrades[`${s.id}_${selectedCourse.id}`] || {};
+                const isFail = grade.status === 'Fail';
+                
                 return (
-                  <tr key={s.id} className="hover:bg-slate-50/50">
-                    <td className="px-6 py-5">
+                  <tr key={s.id} className="hover:bg-slate-50/50 transition-all group">
+                    <td className="px-6 py-4 bg-white first:rounded-l-2xl border-y border-l border-slate-50 group-hover:border-slate-200">
                       <p className="font-bold text-slate-800 text-sm">{s.fullName}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{(s.details as any).studentId}</p>
+                      <p className="text-[10px] text-slate-400 font-bold tracking-tight uppercase">{(s.details as any).studentId}</p>
                     </td>
-                    <td className="px-4 py-5 text-center">
-                      <input type="number" step="0.1" className="w-12 h-9 text-center bg-white border border-slate-100 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" 
+                    <td className="px-4 py-4 text-center bg-white border-y border-slate-50 group-hover:border-slate-200">
+                      <input type="number" step="0.1" className="w-12 h-9 text-center bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
                         value={grade.processGrade || 0} onChange={e => handleGradeChange(s.id, 'processGrade', e.target.value)} />
                     </td>
-                    <td className="px-4 py-5 text-center">
-                      <input type="number" step="0.1" className="w-12 h-9 text-center bg-white border border-slate-100 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" 
+                    <td className="px-4 py-4 text-center bg-white border-y border-slate-50 group-hover:border-slate-200">
+                      <input type="number" step="0.1" className="w-12 h-9 text-center bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
                         value={grade.midtermGrade || 0} onChange={e => handleGradeChange(s.id, 'midtermGrade', e.target.value)} />
                     </td>
-                    <td className="px-4 py-5 text-center">
-                      <input type="number" step="0.1" className="w-12 h-9 text-center bg-blue-50 border border-blue-100 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" 
+                    <td className="px-4 py-4 text-center bg-white border-y border-slate-50 group-hover:border-slate-200">
+                      <input type="number" step="0.1" className="w-12 h-9 text-center bg-blue-50/50 border border-blue-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
                         value={grade.finalGrade || 0} onChange={e => handleGradeChange(s.id, 'finalGrade', e.target.value)} />
                     </td>
-                    <td className="px-4 py-5 text-center font-black text-blue-600">{grade.totalGrade || '-'}</td>
-                    <td className="px-4 py-5 text-center font-bold text-slate-700">{grade.gpa4 || '-'}</td>
-                    <td className="px-4 py-5 text-center">
-                      <span className="px-2 py-1 bg-slate-100 rounded font-black text-slate-800 text-xs">{grade.letterGrade || '-'}</span>
+                    <td className="px-4 py-4 text-center bg-white border-y border-slate-50 group-hover:border-slate-200">
+                      <span className={`text-sm font-black ${isFail ? 'text-red-500' : 'text-blue-600'}`}>{grade.totalGrade || '0.0'}</span>
                     </td>
-                    <td className="px-6 py-5 text-center">
-                      {grade.status && (
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${grade.status === 'Pass' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                          {grade.status === 'Pass' ? 'Đạt' : 'Hỏng'}
-                        </span>
+                    <td className="px-4 py-4 text-center bg-white border-y border-slate-50 group-hover:border-slate-200">
+                      <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-black ${isFail ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-700'}`}>
+                        {grade.letterGrade || '-'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center bg-white last:rounded-r-2xl border-y border-r border-slate-50 group-hover:border-slate-200">
+                      {grade.status ? (
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
+                          isFail 
+                          ? 'bg-red-50/80 border-red-100 text-red-600 shadow-sm shadow-red-50' 
+                          : 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isFail ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+                          <span className="text-[10px] font-black uppercase tracking-wider">
+                            {isFail ? 'Chưa đạt' : 'Đạt'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-300 font-bold uppercase">Trống</span>
                       )}
                     </td>
                   </tr>
@@ -166,6 +179,18 @@ const GradeEntry: React.FC = () => {
               })}
             </tbody>
           </table>
+        </div>
+
+        <div className="mt-8 p-5 bg-slate-50/80 rounded-[2rem] border border-slate-100 flex items-start gap-4">
+          <div className="p-2 bg-white rounded-xl shadow-sm">
+            <Info className="w-5 h-5 text-blue-500" />
+          </div>
+          <div className="text-xs text-slate-500 leading-relaxed">
+            <p className="font-bold text-slate-700 mb-1">Quy định xét kết quả:</p>
+            <p>
+              Hệ thống tự động đánh giá <span className="text-red-600 font-black px-1.5 py-0.5 bg-red-50 rounded mx-1">CHƯA ĐẠT</span> đối với học phần có điểm tổng kết dưới 4.0. Giảng viên vui lòng kiểm tra kỹ các cột điểm thành phần trước khi lưu chính thức.
+            </p>
+          </div>
         </div>
       </div>
     </div>

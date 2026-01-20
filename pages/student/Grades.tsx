@@ -14,7 +14,7 @@ const GradesPage: React.FC = () => {
           <p className="text-slate-500">Tra cứu điểm chi tiết từng học kỳ.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white rounded-xl text-slate-700 hover:bg-slate-50 transition-all font-medium">
+          <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 bg-white rounded-xl text-slate-700 hover:bg-slate-50 transition-all font-medium text-sm">
             <Download className="w-4 h-4" />
             Xuất bảng điểm (PDF)
           </button>
@@ -82,13 +82,13 @@ const GradesPage: React.FC = () => {
                     <td className="px-6 py-5 text-center text-sm">{grade.finalGrade}</td>
                     <td className="px-6 py-5 text-center text-sm font-bold text-blue-600">{grade.totalGrade}</td>
                     <td className="px-6 py-5 text-center">
-                      <span className="font-bold text-slate-800">{grade.letterGrade}</span>
+                      <span className={`font-bold ${grade.letterGrade === 'F' ? 'text-red-600' : 'text-slate-800'}`}>{grade.letterGrade}</span>
                     </td>
                     <td className="px-6 py-5 text-center">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
                         grade.status === 'Pass' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
                       }`}>
-                        {grade.status === 'Pass' ? 'Đạt' : 'Trượt'}
+                        {grade.status === 'Pass' ? 'Đạt' : 'Chưa đạt'}
                       </span>
                     </td>
                   </tr>
