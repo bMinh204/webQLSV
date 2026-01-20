@@ -18,7 +18,9 @@ import ClassDetails from './pages/teacher/ClassDetails';
 import GradeEntry from './pages/teacher/GradeEntry';
 import UserManagement from './pages/admin/UserManagement';
 import CourseManagement from './pages/admin/CourseManagement';
-import Announcements from './pages/Announcements'; // Import Announcements mới
+import Announcements from './pages/Announcements';
+import ChangePassword from './pages/ChangePassword';
+import Settings from './pages/admin/Settings';
 
 const DashboardSwitch = () => {
   const { user } = useAuth();
@@ -48,6 +50,11 @@ const App: React.FC = () => {
             <Route path="/announcements" element={
               <ProtectedRoute>
                 <Announcements />
+              </ProtectedRoute>
+            } />
+            <Route path="/change-password" element={
+              <ProtectedRoute>
+                <ChangePassword />
               </ProtectedRoute>
             } />
 
@@ -99,6 +106,11 @@ const App: React.FC = () => {
             <Route path="/courses" element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                 <CourseManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                <Settings />
               </ProtectedRoute>
             } />
           </Route>

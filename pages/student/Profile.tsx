@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
   User, 
@@ -49,7 +50,7 @@ const Profile: React.FC = () => {
       items: [
         { label: 'Email học viên', value: user.email },
         { label: 'Số điện thoại', value: student.phone },
-        { label: 'Địa chỉ', value: 'Quận Cầu Giấy, Hà Nội' }, // Ví dụ thêm
+        { label: 'Địa chỉ', value: 'Quận Cầu Giấy, Hà Nội' },
       ]
     }
   ];
@@ -110,9 +111,12 @@ const Profile: React.FC = () => {
             <p className="text-blue-100 text-sm leading-relaxed mb-6">
               Bạn nên thay đổi mật khẩu định kỳ 3 tháng một lần để đảm bảo an toàn cho tài khoản học thuật.
             </p>
-            <button className="w-full py-3 bg-white/10 backdrop-blur-md text-white font-bold rounded-xl border border-white/20 hover:bg-white/20 transition-all">
+            <Link 
+              to="/change-password"
+              className="w-full py-3 bg-white/10 backdrop-blur-md text-white font-bold rounded-xl border border-white/20 hover:bg-white/20 transition-all flex justify-center items-center"
+            >
               Đổi mật khẩu
-            </button>
+            </Link>
           </div>
         </div>
 
