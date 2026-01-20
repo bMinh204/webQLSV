@@ -1,15 +1,15 @@
 
-import { GoogleGenAI } from "@google/genai";
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Bot, 
-  Loader2, 
   MessageSquare, 
   Minimize2, 
   Send, 
   User as UserIcon, 
-  X 
+  X,
+  Loader2,
+  HelpCircle
 } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 interface Message {
@@ -17,103 +17,103 @@ interface Message {
   text: string;
 }
 
+// Bộ tri thức cơ sở của EduBot
+const KNOWLEDGE_BASE = [
+  {
+    keywords: ['điểm', 'kết quả', 'gpa', 'học lực'],
+    response: "Bạn có thể xem điểm chi tiết tại mục 'Kết quả học tập'. Hệ thống hiển thị điểm quá trình (30%) và điểm cuối kỳ (70%) cùng điểm chữ quy đổi."
+  },
+  {
+    keywords: ['lịch học', 'thời khóa biểu', 'phòng học'],
+    response: "Lịch học tuần của bạn được cập nhật tại mục 'Lịch học & Thi'. Bạn có thể xem mã phòng, tên giảng viên và thời gian học tại đó."
+  },
+  {
+    keywords: ['lịch thi', 'thi cử', 'phòng thi', 'số báo danh'],
+    response: "Thông tin lịch thi học kỳ (ngày, giờ, phòng thi, SBD) có sẵn trong tab 'Lịch thi' thuộc mục 'Lịch học & Thi'."
+  },
+  {
+    keywords: ['mật khẩu', 'đổi pass', 'bảo mật'],
+    response: "Để đảm bảo an toàn, bạn nên đổi mật khẩu định kỳ tại trang 'Hồ sơ cá nhân' -> 'Đổi mật khẩu'."
+  },
+  {
+    keywords: ['đăng ký', 'tín chỉ', 'môn học'],
+    response: "Việc đăng ký tín chỉ được thực hiện vào đầu mỗi học kỳ. Vui lòng theo dõi 'Thông báo' để biết thời gian mở cổng đăng ký chính xác."
+  },
+  {
+    keywords: ['liên hệ', 'hỗ trợ', 'kỹ thuật'],
+    response: "Nếu gặp sự cố kỹ thuật, bạn vui lòng gửi email về phòng đào tạo: support@university.edu.vn hoặc liên hệ hotline: 1900 1234."
+  },
+  {
+    keywords: ['chào', 'hello', 'hi'],
+    response: "Xin chào! Tôi là EduBot. Tôi có thể giúp bạn tìm thông tin về điểm số, lịch học, lịch thi và quy chế đào tạo. Bạn muốn hỏi gì nào?"
+  }
+];
+
 const ChatBot: React.FC = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: `Chào ${user?.fullName}! Tôi là EduBot, trợ lý ảo của EduChain. Tôi có thể giúp gì cho bạn hôm nay?` }
+    { role: 'model', text: `Chào ${user?.fullName}! Tôi là EduBot, trợ lý ảo của EduChain. Tôi giúp gì được cho bạn?` }
   ]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isLoading]);
+  }, [messages, isTyping]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const getBotResponse = (userInput: string): string => {
+    const inputLower = userInput.toLowerCase();
+    
+    // Tìm kiếm trong bộ tri thức
+    const match = KNOWLEDGE_BASE.find(item => 
+      item.keywords.some(keyword => inputLower.includes(keyword))
+    );
+
+    if (match) return match.response;
+
+    return "Xin lỗi, tôi chưa hiểu ý bạn. Bạn có thể hỏi về: điểm số, lịch học, lịch thi, đăng ký tín chỉ hoặc cách đổi mật khẩu.";
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    const apiKey = process.env.API_KEY;
+    if (!input.trim() || isTyping) return;
 
-    if (!input.trim() || isLoading) return;
-
-    // Kiểm tra API Key khi chạy local
-    if (!apiKey) {
-      console.error("EDU-CHAIN ERROR: API_KEY is missing in environment variables.");
-      setMessages(prev => [...prev, 
-        { role: 'user', text: input.trim() },
-        { role: 'model', text: "Lỗi: Hệ thống chưa được cấu hình API Key. Nếu bạn đang chạy local, hãy kiểm tra biến môi trường process.env.API_KEY." }
-      ]);
-      setInput('');
-      return;
-    }
-
-    const userMessage = input.trim();
+    const userText = input.trim();
+    setMessages(prev => [...prev, { role: 'user', text: userText }]);
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
-    setIsLoading(true);
+    setIsTyping(true);
 
-    try {
-      // Khởi tạo instance mới để đảm bảo lấy key mới nhất
-      const ai = new GoogleGenAI({ apiKey: apiKey });
-      
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: [...messages, { role: 'user', text: userMessage }].map(m => ({
-          role: m.role,
-          parts: [{ text: m.text }]
-        })),
-        config: {
-          systemInstruction: `Bạn là EduBot, một trợ lý AI thông minh và thân thiện của hệ thống EduChain. 
-          Người dùng hiện tại: ${user?.fullName} (${user?.role}).
-          Nhiệm vụ: Giải đáp thắc mắc học vụ, quy chế điểm số và hỗ trợ thao tác trên web. 
-          Trả lời ngắn gọn, tiếng Việt chuyên nghiệp.`,
-          temperature: 0.7,
-        }
-      });
+    // Giả lập độ trễ suy nghĩ của Bot để tự nhiên hơn
+    setTimeout(() => {
+      const botResponse = getBotResponse(userText);
+      setMessages(prev => [...prev, { role: 'model', text: botResponse }]);
+      setIsTyping(false);
+    }, 800);
+  };
 
-      const botText = response.text;
-      
-      if (!botText) {
-        throw new Error("Empty response from AI model");
-      }
-
-      setMessages(prev => [...prev, { role: 'model', text: botText }]);
-    } catch (error: any) {
-      console.error("EDU-CHAIN AI ERROR DETAILS:", error);
-      
-      let errorFriendlyMessage = "Hệ thống AI hiện đang bận. Vui lòng thử lại sau vài giây.";
-      
-      if (error?.message?.includes('403')) {
-        errorFriendlyMessage = "Lỗi 403: Google Gemini chưa hỗ trợ vùng địa lý này hoặc Key bị chặn.";
-      } else if (error?.message?.includes('401')) {
-        errorFriendlyMessage = "Lỗi 401: API Key không hợp lệ hoặc đã hết hạn.";
-      } else if (error?.message?.includes('429')) {
-        errorFriendlyMessage = "Lỗi 429: Bạn đang gửi quá nhiều yêu cầu, vui lòng đợi một chút.";
-      }
-
-      setMessages(prev => [...prev, { role: 'model', text: errorFriendlyMessage }]);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleQuickInquiry = (text: string) => {
+    setInput(text);
   };
 
   return (
     <div className="fixed bottom-6 right-6 z-[200] flex flex-col items-end">
       {isOpen && (
-        <div className="mb-4 w-[380px] h-[550px] bg-white rounded-[2rem] shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
+        <div className="mb-4 w-[380px] h-[550px] bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
+          {/* Header */}
           <div className="p-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
                 <Bot className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-bold leading-none">EduBot AI</h3>
+                <h3 className="font-bold leading-none">EduBot Assistant</h3>
                 <p className="text-[10px] text-blue-100 mt-1 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                  Đang trực tuyến
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
+                  Hỗ trợ trực tuyến
                 </p>
               </div>
             </div>
@@ -122,12 +122,13 @@ const ChatBot: React.FC = () => {
             </button>
           </div>
 
+          {/* Messages Area */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] flex gap-2 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                   <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center border ${
-                    m.role === 'user' ? 'bg-white border-slate-200' : 'bg-blue-600 border-blue-600'
+                    m.role === 'user' ? 'bg-white border-slate-200' : 'bg-blue-600 border-blue-600 shadow-md shadow-blue-100'
                   }`}>
                     {m.role === 'user' ? <UserIcon className="w-4 h-4 text-slate-500" /> : <Bot className="w-4 h-4 text-white" />}
                   </div>
@@ -141,37 +142,57 @@ const ChatBot: React.FC = () => {
                 </div>
               </div>
             ))}
-            {isLoading && (
+            {isTyping && (
               <div className="flex justify-start">
-                <div className="flex gap-2 items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="flex gap-2 items-center bg-white px-4 py-3 rounded-2xl border border-slate-100 shadow-sm">
                   <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                  <span className="text-xs font-medium text-slate-400">EduBot đang suy nghĩ...</span>
+                  <span className="text-xs font-bold text-slate-400 tracking-tight">EduBot đang tìm kiếm...</span>
                 </div>
               </div>
             )}
           </div>
 
+          {/* Quick Suggestions */}
+          {!isTyping && (
+            <div className="px-4 py-2 bg-white border-t border-slate-50 flex gap-2 overflow-x-auto no-scrollbar">
+              {['Xem điểm', 'Lịch thi', 'Đổi mật khẩu'].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => handleQuickInquiry(suggestion)}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-500 rounded-lg text-xs font-bold transition-all shrink-0 border border-transparent hover:border-blue-100"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input Area */}
           <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-slate-50">
             <div className="relative">
               <input 
                 type="text"
-                placeholder="Hỏi tôi về điểm số, lịch học..."
-                className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium"
+                placeholder="Nhập câu hỏi của bạn..."
+                className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-semibold"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
               />
               <button 
                 type="submit"
-                disabled={isLoading || !input.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md shadow-blue-100"
+                disabled={isTyping || !input.trim()}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-100"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
+            <p className="text-[10px] text-slate-400 mt-2 text-center font-medium">
+              Sử dụng các từ khóa như: điểm, lịch học, thi, mật khẩu...
+            </p>
           </form>
         </div>
       )}
 
+      {/* Floating Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className={`group flex items-center gap-3 p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${
@@ -180,10 +201,10 @@ const ChatBot: React.FC = () => {
       >
         {!isOpen && (
           <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-500 font-bold text-sm pl-2">
-            Hỏi EduBot AI
+            Trợ giúp EduBot
           </span>
         )}
-        {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+        {isOpen ? <X className="w-6 h-6" /> : <HelpCircle className="w-6 h-6" />}
       </button>
     </div>
   );
