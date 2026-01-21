@@ -1,6 +1,11 @@
 
 import { UserRole, User, Course, Grade, ScheduleItem, Announcement, ExamScheduleItem } from './types';
 
+// Gemini API Configuration
+// Để tạo API key mới, truy cập: https://makersuite.google.com/app/apikey
+export const GEMINI_API_KEY_PLACEHOLDER = 'AIzaSyAuFLUj0PjCYOQ7Zhg9LMDjxVIA9cHfFl4';
+export const GEMINI_API_KEY: string = GEMINI_API_KEY_PLACEHOLDER;
+
 export const FACULTIES = [
   'Công nghệ thông tin',
   'Kinh tế & Quản trị',

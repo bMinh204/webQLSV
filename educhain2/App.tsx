@@ -18,9 +18,9 @@ import ClassDetails from './pages/teacher/ClassDetails';
 import GradeEntry from './pages/teacher/GradeEntry';
 import UserManagement from './pages/admin/UserManagement';
 import CourseManagement from './pages/admin/CourseManagement';
-import Announcements from './pages/Announcements';
-import ChangePassword from './pages/ChangePassword';
-import Settings from './pages/admin/Settings';
+import Announcements from './pages/Announcements'; // Import Announcements mới
+import TestDataEntry from './pages/TestDataEntry'; // Import TestDataEntry
+import TestChatBot from './components/TestChatBot'; // Import TestChatBot
 
 const DashboardSwitch = () => {
   const { user } = useAuth();
@@ -50,11 +50,6 @@ const App: React.FC = () => {
             <Route path="/announcements" element={
               <ProtectedRoute>
                 <Announcements />
-              </ProtectedRoute>
-            } />
-            <Route path="/change-password" element={
-              <ProtectedRoute>
-                <ChangePassword />
               </ProtectedRoute>
             } />
 
@@ -108,11 +103,10 @@ const App: React.FC = () => {
                 <CourseManagement />
               </ProtectedRoute>
             } />
-            <Route path="/settings" element={
-              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                <Settings />
-              </ProtectedRoute>
-            } />
+            
+            {/* Test Route - Accessible without authentication */}
+            <Route path="/test" element={<TestDataEntry />} />
+            <Route path="/test-chat" element={<TestChatBot />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

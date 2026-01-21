@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole } from '../types';
 import { MOCK_USERS } from '../constants';
+import { authAPI } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -25,14 +26,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (username: string, pass: string): Promise<boolean> => {
-    // Basic mock authentication
-    const foundUser = MOCK_USERS.find(u => u.username === username);
-    if (foundUser && pass === '123456') { // Simple global password for demo
-      setUser(foundUser);
-      localStorage.setItem('edu_user', JSON.stringify(foundUser));
+    try {
+      // Try API login first
+      const userData = await authAPI.login(username, pass);
+      // Map _id to id for frontend compatibility
+      const user = {
+        ...userData,
+        id: userData._id || userData.id,
+        avatar: `https://picsum.photos/seed/${username}/200`
+      };
+      setUser(user as User);
+      localStorage.setItem('edu_user', JSON.stringify(user));
       return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      // Fallback to mock users for demo accounts
+      const foundUser = MOCK_USERS.find(u => u.username === username);
+      if (foundUser && pass === '123456') {
+        setUser(foundUser);
+        localStorage.setItem('edu_user', JSON.stringify(foundUser));
+        return true;
+      }
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
