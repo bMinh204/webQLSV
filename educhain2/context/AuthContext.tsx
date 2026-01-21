@@ -33,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const user = {
         ...userData,
         id: userData._id || userData.id,
+        role: (userData.role || '').toString().toUpperCase() as UserRole,
         avatar: `https://picsum.photos/seed/${username}/200`
       };
       setUser(user as User);

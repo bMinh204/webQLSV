@@ -2,6 +2,8 @@ const User = require("../models/User");
 const Course = require("../models/Course");
 const Grade = require("../models/Grade");
 
+const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 exports.hello = (req, res) => {
   res.json({ message: "Hello from backend " });
 };
@@ -11,25 +13,36 @@ exports.hello = (req, res) => {
 // Login
 exports.login = async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    
+    const { username, email, password } = req.body;
+    const loginId = (username || email || "").trim();
+
+    if (!loginId || !password) {
+      return res.status(400).json({ message: "Username/email and password are required" });
+    }
+
+    const isEmail = loginId.includes("@");
+    const user = await User.findOne(
+      isEmail
+        ? { email: loginId.toLowerCase() }
+        : { username: new RegExp(`^${escapeRegex(loginId)}$`, "i") }
+    );
+
     if (!user) {
       return res.status(401).json({ message: "Invalid username or password" });
     }
-    
+
     // Simple password check (in production, use bcrypt)
     if (user.password !== password) {
       return res.status(401).json({ message: "Invalid username or password" });
     }
-    
+
     // Remove password from response
     const userResponse = user.toObject();
     delete userResponse.password;
-    
+
     res.json(userResponse);
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -62,11 +75,36 @@ exports.getUserById = async (req, res) => {
 // Create new user
 exports.createUser = async (req, res) => {
   try {
-    // Set default password if not provided
+    const username = (req.body.username || "").trim();
+    const email = (req.body.email || "").trim().toLowerCase();
+    const fullName = (req.body.fullName || "").trim();
+    const role = (req.body.role || "student").toLowerCase();
+    const password = req.body.password || "123456";
+
+    if (!username || !email || !fullName) {
+      return res.status(400).json({ message: "username, email, fullName are required" });
+    }
+
+    const existingUser = await User.findOne({
+      $or: [
+        { username: new RegExp(`^${escapeRegex(username)}$`, "i") },
+        { email }
+      ]
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ message: "Username or email already exists" });
+    }
+
     const userData = {
       ...req.body,
-      password: req.body.password || '123456'
+      username,
+      email,
+      fullName,
+      role,
+      password
     };
+
     const user = new User(userData);
     const savedUser = await user.save();
     // Remove password from response
@@ -74,7 +112,7 @@ exports.createUser = async (req, res) => {
     delete userResponse.password;
     res.status(201).json(userResponse);
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error("Error creating user:", error);
     res.status(400).json({ message: error.message });
   }
 };
