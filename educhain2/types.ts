@@ -56,6 +56,13 @@ export interface Grade {
   status: 'Pass' | 'Fail';
 }
 
+export interface StudentTranscript extends Grade {
+  courseCode?: string;
+  courseName?: string;
+  credits?: number;
+  semester?: string;
+}
+
 export interface ScheduleItem {
   id: string;
   dayOfWeek: number; // 1 for Monday, 7 for Sunday

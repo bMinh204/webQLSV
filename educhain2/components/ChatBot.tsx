@@ -1,184 +1,105 @@
-
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { 
-  Bot, 
-  Loader2, 
-  MessageSquare, 
-  Minimize2, 
-  Send, 
-  User as UserIcon, 
-  X 
-} from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Send, Bot, Loader2 } from 'lucide-react';
+import { getChatbotResponse } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
-import { GEMINI_API_KEY, GEMINI_API_KEY_PLACEHOLDER } from '../constants';
 
 interface Message {
-  role: 'user' | 'model';
+  id: string;
+  sender: 'user' | 'bot';
   text: string;
 }
 
-const ChatBot: React.FC = () => {
+const Chatbot: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { user } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: `Chào ${user?.fullName}! Tôi là EduBot, trợ lý ảo của EduChain. Tôi có thể giúp gì cho bạn hôm nay?` }
+    { id: '1', sender: 'bot', text: `Xin chào ${user?.name}! Tôi là trợ lý học vụ AI của bạn. Tôi có thể giúp gì cho bạn hôm nay?` }
   ]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isLoading]);
+  }, [messages]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSend = async () => {
+    if (!input.trim()) return;
 
-    if (!input.trim() || isLoading) return;
-
-    const userMessage = input.trim();
+    const userMsg: Message = { id: Date.now().toString(), sender: 'user', text: input };
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
-    setIsLoading(true);
+    setLoading(true);
 
-    try {
-      // Kiểm tra API Key
-      if (!GEMINI_API_KEY || GEMINI_API_KEY === GEMINI_API_KEY_PLACEHOLDER) {
-        throw new Error("API Key không được cấu hình");
-      }
+    const context = `Vai trò người dùng: ${user?.role}. Tên: ${user?.name}.`;
+    const response = await getChatbotResponse(input, context);
 
-      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-pro",
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 800,
-        }
-      });
-      
-      // Tạo prompt đơn giản hơn
-      const context = `Bạn là EduBot, trợ lý ảo của hệ thống quản lý sinh viên EduChain. Người dùng: ${user?.fullName} (${user?.role}). Trả lời ngắn gọn bằng tiếng Việt.`;
-      
-      const prompt = `${context}\n\nCâu hỏi: ${userMessage}\n\nTrả lời:`;
-
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const botText = response.text();
-      
-      if (botText && botText.trim()) {
-        setMessages(prev => [...prev, { role: 'model', text: botText.trim() }]);
-      } else {
-        throw new Error("Không nhận được phản hồi từ AI");
-      }
-    } catch (error: any) {
-      console.error("ChatBot Error:", error);
-      
-      let errorMessage = "Xin lỗi, tôi gặp lỗi khi xử lý câu hỏi của bạn.";
-      
-      if (error?.message?.includes('API key')) {
-        errorMessage = "Lỗi: API Key không hợp lệ. Vui lòng kiểm tra lại cấu hình.";
-      } else if (error?.status === 403 || error?.message?.includes('403')) {
-        errorMessage = "Lỗi 403: Gemini API không khả dụng ở khu vực này hoặc API key bị chặn.";
-      } else if (error?.status === 429 || error?.message?.includes('429')) {
-        errorMessage = "Lỗi 429: Quá nhiều yêu cầu. Vui lòng đợi một chút.";
-      }
-
-      setMessages(prev => [...prev, { role: 'model', text: errorMessage }]);
-    } finally {
-      setIsLoading(false);
-    }
+    const botMsg: Message = { id: (Date.now() + 1).toString(), sender: 'bot', text: response };
+    setMessages(prev => [...prev, botMsg]);
+    setLoading(false);
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[200] flex flex-col items-end">
-      {isOpen && (
-        <div className="mb-4 w-[380px] h-[550px] bg-white rounded-[2rem] shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
-          <div className="p-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
-                <Bot className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-bold leading-none">EduBot AI</h3>
-                <p className="text-[10px] text-blue-100 mt-1 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                  Đang trực tuyến
-                </p>
-              </div>
-            </div>
-            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-              <Minimize2 className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50">
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] flex gap-2 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center border ${
-                    m.role === 'user' ? 'bg-white border-slate-200' : 'bg-blue-600 border-blue-600'
-                  }`}>
-                    {m.role === 'user' ? <UserIcon className="w-4 h-4 text-slate-500" /> : <Bot className="w-4 h-4 text-white" />}
-                  </div>
-                  <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
-                    m.role === 'user' 
-                    ? 'bg-blue-600 text-white rounded-tr-none' 
-                    : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
-                  }`}>
-                    {m.text}
-                  </div>
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="flex gap-2 items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                  <span className="text-xs font-medium text-slate-400">EduBot đang suy nghĩ...</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-slate-50">
-            <div className="relative">
-              <input 
-                type="text"
-                placeholder="Hỏi tôi về điểm số, lịch học..."
-                className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
-              <button 
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md shadow-blue-100"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          </form>
+    <div className="bg-white w-80 md:w-96 rounded-2xl shadow-2xl border border-slate-200 flex flex-col h-[500px] animate-in slide-in-from-bottom-10 fade-in duration-300 font-sans">
+      {/* Header */}
+      <div className="bg-blue-600 p-4 rounded-t-2xl flex justify-between items-center text-white">
+        <div className="flex items-center gap-2">
+          <Bot size={20} />
+          <h3 className="font-semibold">Trợ lý AI</h3>
         </div>
-      )}
+        <button onClick={onClose} className="hover:bg-blue-500 p-1 rounded-full transition-colors">
+          <X size={18} />
+        </button>
+      </div>
 
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`group flex items-center gap-3 p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${
-          isOpen ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white'
-        }`}
-      >
-        {!isOpen && (
-          <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-500 font-bold text-sm pl-2">
-            Hỏi EduBot AI
-          </span>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50" ref={scrollRef}>
+        {messages.map((msg) => (
+          <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div 
+              className={`max-w-[85%] px-4 py-2 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                msg.sender === 'user' 
+                  ? 'bg-blue-600 text-white rounded-br-none' 
+                  : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'
+              }`}
+            >
+              {msg.text}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            </div>
+          </div>
         )}
-        {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
-      </button>
+      </div>
+
+      {/* Input */}
+      <div className="p-3 border-t border-slate-200 bg-white rounded-b-2xl">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="Hỏi về điểm số, quy định..."
+            className="flex-1 px-4 py-2 bg-slate-100 text-slate-900 placeholder:text-slate-500 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={loading}
+          />
+          <button 
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send size={18} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default ChatBot;
+export default Chatbot;
