@@ -16,33 +16,33 @@ router.get("/", async (req, res) => {
 });
 
 // @route   POST /api/students
-// @desc    Thêm sinh viên mới (Admin tạo)
+// @desc    Thêm người dùng mới (Admin tạo - có thể là student/teacher/admin)
 router.post("/", async (req, res) => {
   try {
-    const { studentId, fullName, email, password } = req.body;
+    const { studentId, fullName, email, password, role } = req.body;
 
     // 1. Kiểm tra thông tin bắt buộc
     if (!studentId || !fullName || !email) {
-      return res.status(400).json({ message: "Vui lòng điền đầy đủ: Mã SV, Họ tên và Email" });
+      return res.status(400).json({ message: "Vui lòng điền đầy đủ: Mã người dùng, Họ tên và Email" });
     }
 
     // 2. Kiểm tra trùng lặp
-    const existingStudent = await Student.findOne({ studentId });
-    if (existingStudent) {
-      return res.status(400).json({ message: "Mã sinh viên này đã tồn tại trên hệ thống" });
+    const existingUser = await Student.findOne({ studentId });
+    if (existingUser) {
+      return res.status(400).json({ message: "Mã người dùng này đã tồn tại trên hệ thống" });
     }
 
     // 3. Mã hóa mật khẩu (Mặc định là 123456 nếu không gửi từ Frontend)
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password || "123456", salt);
 
-    // 4. Tạo đối tượng sinh viên mới
+    // 4. Tạo đối tượng người dùng mới với role (mặc định là student nếu không có)
     const student = new Student({
       studentId,
       fullName,
       email,
       password: hashedPassword,
-      role: "student" // Mặc định role là sinh viên
+      role: role || "student" // Hỗ trợ student, teacher, admin
     });
 
     const savedStudent = await student.save();
@@ -51,12 +51,12 @@ router.post("/", async (req, res) => {
     const responseData = savedStudent.toObject();
     delete responseData.password;
 
-    console.log("✅ Đã tạo sinh viên thành công:", savedStudent.studentId);
+    console.log("✅ Đã tạo người dùng thành công:", savedStudent.studentId, "- Vai trò:", savedStudent.role);
     res.status(201).json(responseData);
 
   } catch (err) {
     console.error("❌ Lỗi POST /api/students:", err.message);
-    res.status(400).json({ message: "Không thể tạo sinh viên: " + err.message });
+    res.status(400).json({ message: "Không thể tạo người dùng: " + err.message });
   }
 });
 

@@ -30,15 +30,16 @@ const Sidebar: React.FC = () => {
       { path: '/announcements', label: 'Thông báo', icon: Bell },
     ],
     [UserRole.TEACHER]: [
-      { path: '/', label: 'Quản lý lớp dạy', icon: Users },
+      { path: '/', label: 'Lớp học của tôi', icon: Users },
       { path: '/grade-entry', label: 'Nhập điểm', icon: GraduationCap },
       { path: '/announcements', label: 'Thông báo', icon: Bell },
+      { path: '/change-password', label: 'Đổi mật khẩu', icon: Settings },
     ],
     [UserRole.ADMIN]: [
       { path: '/', label: 'Quản lý người dùng', icon: Users },
       { path: '/courses', label: 'Quản lý môn học', icon: BookOpen },
-      { path: '/announcements', label: 'Thông báo', icon: Bell },
       { path: '/settings', label: 'Cấu hình hệ thống', icon: Settings },
+      { path: '/announcements', label: 'Thông báo', icon: Bell },
     ]
   };
 

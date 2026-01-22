@@ -49,6 +49,7 @@ const UserManagement: React.FC = () => {
     studentId: '',
     fullName: '',
     email: '',
+    password: '',
     role: UserRole.STUDENT,
     faculty: FACULTIES[0],
   });
@@ -63,7 +64,7 @@ const UserManagement: React.FC = () => {
           username: student.studentId, // Map studentId to username for display
           fullName: student.fullName,
           email: student.email,
-          role: 'student',
+          role: student.role || 'student', // Use role from backend
           avatar: `https://picsum.photos/seed/${student._id}/200`,
           status: 'Active',
         }));
@@ -83,6 +84,7 @@ const UserManagement: React.FC = () => {
         studentId: user.username, // Map username back to studentId
         fullName: user.fullName,
         email: user.email,
+        password: '',
         role: user.role,
         faculty: (user.details as any)?.faculty || FACULTIES[0],
       });
@@ -92,6 +94,7 @@ const UserManagement: React.FC = () => {
         studentId: '',
         fullName: '',
         email: '',
+        password: '',
         role: UserRole.STUDENT,
         faculty: FACULTIES[0],
       });
@@ -120,12 +123,14 @@ const UserManagement: React.FC = () => {
         }
       } else {
         // Add new user
-        const newStudent = {
+        const newUser = {
           studentId: formData.studentId,
           fullName: formData.fullName,
           email: formData.email,
+          password: formData.password || '123456',
+          role: formData.role,
         };
-        const response = await axios.post('http://localhost:5000/api/students', newStudent);
+        const response = await axios.post('http://localhost:5000/api/students', newUser);
 
         if (response.status === 201) {
           const savedStudent = response.data;
@@ -148,6 +153,7 @@ const UserManagement: React.FC = () => {
         studentId: '',
         fullName: '',
         email: '',
+        password: '',
         role: UserRole.STUDENT,
         faculty: FACULTIES[0],
       });
@@ -395,7 +401,7 @@ const UserManagement: React.FC = () => {
                 <div className="p-2 bg-blue-600 text-white rounded-xl">
                   {editingUser ? <Edit className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
                 </div>
-                <h3 className="text-xl font-bold text-slate-800">{editingUser ? 'Cập nhật thông tin' : 'Thêm sinh viên mới'}</h3>
+                <h3 className="text-xl font-bold text-slate-800">{editingUser ? 'Cập nhật thông tin' : 'Thêm người dùng mới'}</h3>
               </div>
               <button type="button" onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
                 <X className="w-6 h-6" />
@@ -404,8 +410,8 @@ const UserManagement: React.FC = () => {
             
             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Mã sinh viên</label>
-                <input required type="text" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700" value={formData.studentId} onChange={e => setFormData({ ...formData, studentId: e.target.value })} placeholder="SV001" />
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Mã người dùng</label>
+                <input required type="text" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700" value={formData.studentId} onChange={e => setFormData({ ...formData, studentId: e.target.value })} placeholder="SV001 / GV001 / ADMIN001" />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Họ và tên</label>
@@ -414,6 +420,18 @@ const UserManagement: React.FC = () => {
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
                 <input required type="email" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="example@university.edu.vn" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Mật khẩu {!editingUser && <span className="text-red-500">*</span>}</label>
+                <input type="password" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder={editingUser ? "Để trống nếu không đổi" : "Mặc định: 123456"} required={!editingUser} />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Vai trò</label>
+                <select required className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value as UserRole })}>
+                  <option value={UserRole.STUDENT}>Sinh viên</option>
+                  <option value={UserRole.TEACHER}>Giảng viên</option>
+                  <option value={UserRole.ADMIN}>Quản trị viên</option>
+                </select>
               </div>
             </div>
 

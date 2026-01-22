@@ -2,6 +2,7 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { UserRole } from './types';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -35,11 +36,12 @@ const DashboardSwitch = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route element={<Layout />}>
+      <NotificationProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route element={<Layout />}>
             <Route path="/" element={
               <ProtectedRoute>
                 <DashboardSwitch />
@@ -118,6 +120,7 @@ const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 };
